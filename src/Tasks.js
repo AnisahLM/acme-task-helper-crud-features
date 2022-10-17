@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
 import { destroyTask, updateTask, createTask } from './store';
 
 const Tasks = ()=> {
   const { tasks } = useSelector(state => state);
+  const navigate = useNavigate();
   const [name, setName ] = useState('');
   const [complete, setComplete ] = useState(false);
   const dispatch = useDispatch();
   const { id } = useParams();
+  const {pathname} = useLocation();
+  
   useEffect(()=> {
     const task = tasks.find( task => task.id === id);
     setName(task ? task.name : '');
@@ -19,22 +22,33 @@ const Tasks = ()=> {
     ev.preventDefault();
     if(id){
       const task = { id, name, complete };
-      dispatch(updateTask(task));
+      dispatch(updateTask(task, navigate));
     }
     else {
       const task = { name, complete };
-      dispatch(createTask(task));
+      dispatch(createTask(task, navigate));
     }
   };
+  
+ let filtered = tasks;
+ if(pathname === '/easy') {
+   filtered = filtered.filter((task => task.difficulty === 'Easy'));
+ }
+ if(pathname === '/medium') {
+   filtered = filtered.filter((task => task.difficulty === 'Medium'));
+ }
+ if(pathname === '/hard') {
+   filtered = filtered.filter((task => task.difficulty === 'Hard'));
+ }
 
   const destroy = ()=> {
-    dispatch(destroyTask({ id }));
+    dispatch(destroyTask({ id }, navigate));
   };
   return (
     <div>
       <ul>
         {
-          tasks.map( task => {
+          filtered.map( task => {
             return (
               <li
                 key={ task.id }
@@ -43,6 +57,8 @@ const Tasks = ()=> {
                 <Link to={`/tasks/${task.id}`}>
                 { task.name }
                 </Link>
+                {task.id === id ? task.description : null }
+                {task.id === id ? task.difficulty : null }
               </li>
             );
           })
